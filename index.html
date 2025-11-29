@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gerenciador de Lista M3U</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 20px;
+      max-width: 800px;
+      margin: auto;
+      padding: 30px;
+      background-color: #f9f9f9;
+    }
+    input, button, label {
+      width: 100%;
+      margin: 15px 0;
+      padding: 15px;
+      font-size: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #progress-container {
+      width: 100%;
+      background-color: #ddd;
+      border-radius: 5px;
+      display: none;
+      margin-top: 15px;
+    }
+    #progress-bar {
+      width: 0%;
+      height: 30px;
+      background-color: #28a745;
+      text-align: center;
+      color: white;
+      border-radius: 5px;
+      line-height: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📺 SEPARADOR de Lista M3U em CATEGORIAS!</h2>
+
+  <label>🔗 Link da lista .M3U (Adicione S pra forçar HTTPS):</label>
+  <input type="text" id="m3uUrl" placeholder="Digite o link .m3u completo" />
+  <button onclick="abrirLinkDireto()"><b>🔓 BAIXAR ARQUIVO M3U BRUTO</button>
+
+  <label>📁 AGORA BOTE AQUI esse arquivo .M3U ou outro que desejar:</label>
+  <input type="file" id="fileInput" accept=".m3u" />
+
+  <label>✍️ Complemento opcional no nome dos arquivos: ⭐ 🧃</label>
+  <input type="text" id="suffix" placeholder="Ex: ⭐ Lista Premium" />
+
+  <button onclick="processarUpload()"><b>⚙️ Processar Arquivo M3U e BAIXAR! </b></button>
+
+  <p id="status"></p>
+  <div id="progress-container">
+    <div id="progress-bar">0%</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+
+  <script>
+    function abrirLinkDireto() {
+      const url = document.getElementById("m3uUrl").value.trim();
+      if (!url) {
+        alert("Por favor, insira um link válido.");
+        return;
+      }
+      window.open(url, "_blank");
+    }
+
+    function processarUpload() {
+      const fileInput = document.getElementById('fileInput');
+      const suffix = document.getElementById('suffix').value.trim();
+      const status = document.getElementById('status');
+      const progressBar = document.getElementById('progress-bar');
+      const progressContainer = document.getElementById('progress-container');
+
+      if (!fileInput.files.length) {
+        alert("Por favor, selecione um arquivo .m3u.");
+        return;
+      }
+
+      status.textContent = "";
+      progressContainer.style.display = "block";
+      progressBar.style.width = "0%";
+      progressBar.textContent = "0%";
+
+      const file = fileInput.files[0];
+      const fileNameBase = file.name.replace(/\.[^\/.]+ $/, "");
+
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        const content = e.target.result;
+        const lines = content.split(/\r?\n/);
+        const categories = {};
+        let i = 0;
+
+        while (i < lines.length) {
+          if (lines[i].startsWith("#EXTINF")) {
+            const info = lines[i];
+            const url = lines[i + 1] || '';
+            const match = info.match(/group-title="([^"]+)"/);
+            const group = match ? match[1].trim() : "SEM_CATEGORIA";
+            if (!categories[group]) categories[group] = ["#EXTM3U"];
+            categories[group].push(info, url);
+            i += 2;
+          } else {
+            i++;
+          }
+        }
+
+        const zip = new JSZip();
+        const folder = zip.folder(fileNameBase);
+
+        const entries = Object.entries(categories);
+        const total = entries.length;
+
+        for (let j = 0; j < total; j++) {
+          const [group, items] = entries[j];
+          const safeGroup = group.replace(/[\s\/|]+/g, "_");
+          const filename = `${safeGroup}${suffix ? ' ' + suffix : ''}.m3u`;
+          folder.file(filename, items.join("\n"));
+          const percent = Math.floor(((j + 1) / total) * 100);
+          progressBar.style.width = percent + "%";
+          progressBar.textContent = percent + "%";
+        }
+
+        status.textContent = "Gerando ZIP...";
+        zip.generateAsync({ type: "blob" }).then(function (blob) {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = fileNameBase + ".zip";
+          link.click();
+          status.textContent = "✅ ZIP gerado com sucesso!";
+          progressBar.style.width = "100%";
+          progressBar.textContent = "100%";
+        });
+      };
+
+      reader.readAsText(file);
+    }
+  </script>
+
+<a href="https://AdautoSuper.Net/Banners/Aplicativos/IPTV Checker 2.5.exe"> 
+
+  <button><b>📥 BAIXAR IPTV CHECKER 2.5.exe! </b></button>
+
+</a>
+</body>
+</html>
